@@ -18,7 +18,7 @@
       "startTimeTo": "06:30",
       "keyword": "",
       "lookaheadDays": 14,
-      "thresholdRemaining": 5,
+      "thresholdRemaining": 10,
       "notifyMode": "on_decrease",
       "notifyFull": true,
       "notifyReopen": true

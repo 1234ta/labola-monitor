@@ -1,10 +1,21 @@
 import { loadEnvFile } from './env.js';
 import { runMonitorCycle } from './monitor.js';
+import { loadConfig } from './storage.js';
+import { sendTestNotification } from './notifier.js';
 
 loadEnvFile();
 const dryRun = process.argv.includes('--dry-run');
+const testNotify = process.argv.includes('--test-notify') || process.env.TEST_NOTIFY === 'true';
 
 async function main() {
+  if (testNotify) {
+    console.log('テスト通知を送信します...');
+    const config = loadConfig();
+    const sent = await sendTestNotification(config.notifications, 'all');
+    console.log(`テスト通知の送信に成功しました！ (${sent.join(', ')})`);
+    return;
+  }
+
   console.log(`LaBOLA 個サル監視チェック開始 (${dryRun ? 'DRY RUN' : '本番'})...`);
   const result = await runMonitorCycle({ dryRun });
   console.log(`チェック完了: ${result.checkedAt}`);

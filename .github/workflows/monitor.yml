@@ -5,6 +5,11 @@ on:
     # 10分おきにチェック（GitHub Actions の仕様で数分の前後あり）
     - cron: '*/10 * * * *'
   workflow_dispatch:
+    inputs:
+      test_notify:
+        description: 'テスト通知を送信する（メール / LINE）'
+        type: boolean
+        default: false
 
 jobs:
   check:
@@ -32,4 +37,5 @@ jobs:
           LINE_ENABLED: ${{ secrets.LINE_ENABLED }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          TEST_NOTIFY: ${{ github.event.inputs.test_notify || 'false' }}
         run: npm run check

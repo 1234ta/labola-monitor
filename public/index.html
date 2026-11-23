@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LaBOLA 個サル空き枠モニター</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div>
+        <h1>⚽ LaBOLA 個サル空き枠モニター</h1>
+        <p class="subtitle">予約が埋まる前にメール・LINEでお知らせ</p>
+      </div>
+      <div class="topbar-actions">
+        <span id="lastChecked" class="meta-badge">未チェック</span>
+        <button id="btnCheckNow" class="btn btn-primary">今すぐチェック</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="toast" class="toast hidden"></div>
+    <div id="errorBanner" class="error-banner hidden"></div>
+
+    <!-- 1. 現在の空き状況 -->
+    <section class="card">
+      <div class="section-header">
+        <h2>📋 監視中の個サル 空き状況</h2>
+        <span id="eventCountBadge" class="pill">0件</span>
+      </div>
+      <div id="eventsContainer" class="events-grid">
+        <p class="muted">読み込み中...</p>
+      </div>
+    </section>
+
+    <!-- 2. 監視ルール管理 -->
+    <section class="card">
+      <div class="section-header">
+        <h2>🎯 監視ルール（施設・時間帯）</h2>
+        <button id="btnAddRule" class="btn btn-outline">＋ 施設・時間帯を追加</button>
+      </div>
+      <div id="rulesContainer" class="rules-list"></div>
+
+      <!-- ルール追加・編集フォーム -->
+      <form id="ruleForm" class="sub-panel hidden">
+        <h3 id="ruleFormTitle">新しい監視ルールを追加</h3>
+        <input type="hidden" id="ruleId" />
+
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="ruleShopUrl">LaBOLA 施設URL（または施設ID）*</label>
+            <div class="input-with-btn">
+              <input type="text" id="ruleShopUrl" placeholder="https://yoyaku.labola.jp/r/shop/3050/" required />
+              <button type="button" id="btnPreviewShop" class="btn btn-secondary">施設を確認</button>
+            </div>
+            <small id="shopPreviewHint" class="hint">例: https://yoyaku.labola.jp/r/shop/3050/</small>
+          </div>
+          <div class="form-group flex-1">
+            <label for="ruleName">ルール名 *</label>
+            <input type="text" id="ruleName" placeholder="VIVAIO豊富 土日祝 朝6:00〜" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ruleDayFilter">対象曜日</label>
+            <select id="ruleDayFilter">
+              <option value="weekend_holiday">土日祝のみ</option>
+              <option value="weekday">平日のみ</option>
+              <option value="all">毎日（全曜日）</option>
+              <option value="custom">曜日を個別に指定</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ruleTimeFrom">開始時刻（から）</label>
+            <input type="time" id="ruleTimeFrom" value="06:00" />
+          </div>
+          <div class="form-group">
+            <label for="ruleTimeTo">開始時刻（まで）</label>
+            <input type="time" id="ruleTimeTo" value="06:30" />
+          </div>
+          <div class="form-group">
+            <label for="ruleThreshold">通知しきい値（残り人数）</label>
+            <input type="number" id="ruleThreshold" min="0" max="100" value="5" />
+          </div>
+        </div>
+
+        <div id="customDaysRow" class="form-group hidden">
+          <label>指定する曜日</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" name="customDay" value="1" /> 月</label>
+            <label><input type="checkbox" name="customDay" value="2" /> 火</label>
+            <label><input type="checkbox" name="customDay" value="3" /> 水</label>
+            <label><input type="checkbox" name="customDay" value="4" /> 木</label>
+            <label><input type="checkbox" name="customDay" value="5" /> 金</label>
+            <label><input type="checkbox" name="customDay" value="6" checked /> 土</label>
+            <label><input type="checkbox" name="customDay" value="0" checked /> 日</label>
+            <label><input type="checkbox" id="ruleIncludeHolidays" checked /> 祝日も含む</label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ruleKeyword">キーワード絞り込み（任意）</label>
+            <input type="text" id="ruleKeyword" placeholder="例: エンジョイ / ミックス" />
+          </div>
+          <div class="form-group">
+            <label for="ruleLookahead">何日先まで監視</label>
+            <input type="number" id="ruleLookahead" min="1" max="90" value="14" />
+          </div>
+          <div class="form-group">
+            <label for="ruleNotifyMode">再通知モード</label>
+            <select id="ruleNotifyMode">
+              <option value="on_decrease">空きが減るたびに再通知（おすすめ）</option>
+              <option value="once">1イベントにつき1回だけ通知</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="checkbox-group mb-12">
+          <label><input type="checkbox" id="ruleNotifyFull" checked /> 満員（残り0人）になったら通知</label>
+          <label><input type="checkbox" id="ruleNotifyReopen" checked /> 満員からキャンセルで空きが出たら通知</label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">ルールを保存</button>
+          <button type="button" id="btnCancelRule" class="btn btn-ghost">キャンセル</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 3. 通知設定（メール / LINE） -->
+    <section class="card">
+      <div class="section-header">
+        <h2>🔔 スマホ通知設定（メール / LINE）</h2>
+        <div class="inline-actions">
+          <label class="inline-label">
+            チェック間隔:
+            <input type="number" id="pollInterval" min="1" max="120" value="5" class="input-sm" /> 分
+          </label>
+        </div>
+      </div>
+
+      <form id="settingsForm">
+        <div class="notify-grid">
+          <!-- メール設定 -->
+          <div class="notify-box">
+            <div class="notify-box-header">
+              <h3>📧 メール通知（SMTP / Gmail等）</h3>
+              <label class="switch">
+                <input type="checkbox" id="emailEnabled" />
+                <span>有効</span>
+              </label>
+            </div>
+            <p class="hint mb-8">Gmailの場合は「Googleアカウント → セキュリティ → アプリパスワード」を発行して入力します。</p>
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="emailHost">SMTPホスト</label>
+                <input type="text" id="emailHost" value="smtp.gmail.com" />
+              </div>
+              <div class="form-group flex-1">
+                <label for="emailPort">ポート</label>
+                <input type="number" id="emailPort" value="587" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="emailUser">送信元メールアドレス（ユーザー）</label>
+              <input type="email" id="emailUser" placeholder="yourname@gmail.com" />
+            </div>
+            <div class="form-group">
+              <label for="emailPass">アプリパスワード <span id="emailPassStatus" class="saved-tag hidden">保存済み</span></label>
+              <input type="password" id="emailPass" placeholder="変更する場合のみ入力" autocomplete="new-password" />
+            </div>
+            <div class="form-group">
+              <label for="emailTo">通知先メールアドレス</label>
+              <input type="email" id="emailTo" placeholder="yourname@gmail.com" />
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" data-test-channel="email">メールをテスト送信</button>
+          </div>
+
+          <!-- LINE設定 -->
+          <div class="notify-box">
+            <div class="notify-box-header">
+              <h3>💬 LINE通知（Messaging API）</h3>
+              <label class="switch">
+                <input type="checkbox" id="lineEnabled" />
+                <span>有効</span>
+              </label>
+            </div>
+            <p class="hint mb-8">LINE DevelopersでMessaging APIチャネルを作成し、長期アクセストークンと自分のユーザーIDを設定します（無料プラン月200通）。</p>
+            <div class="form-group">
+              <label for="lineToken">チャネルアクセストークン <span id="lineTokenStatus" class="saved-tag hidden">保存済み</span></label>
+              <input type="password" id="lineToken" placeholder="変更する場合のみ入力" autocomplete="new-password" />
+            </div>
+            <div class="form-group">
+              <label for="lineUserId">送信先ユーザーID（Uから始まるID）</label>
+              <input type="text" id="lineUserId" placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" data-test-channel="line">LINEをテスト送信</button>
+          </div>
+        </div>
+
+        <div class="form-actions mt-16">
+          <button type="submit" class="btn btn-primary">通知・監視設定を保存</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 4. 通知履歴 -->
+    <section class="card">
+      <div class="section-header">
+        <h2>📜 最近の通知・ログ</h2>
+      </div>
+      <div id="logsContainer" class="logs-list">
+        <p class="muted">まだ履歴はありません。</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

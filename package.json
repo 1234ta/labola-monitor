@@ -1,0 +1,10 @@
+{
+  "name": "labola-kosaru-monitor",
+  "version": "1.0.0",
+  "description": "LaBOLA 個人フットサル空き枠監視・通知アプリ（メール / LINE対応・依存パッケージ不要）",
+  "type": "module",
+  "scripts": {
+    "start": "node --use-system-ca src/server.js",
+    "check": "node --use-system-ca src/cli-check.js"
+  }
+}

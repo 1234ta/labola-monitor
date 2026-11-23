@@ -1,0 +1,44 @@
+{
+  "pollIntervalMinutes": 5,
+  "rules": [
+    {
+      "id": "rule-vivaio-morning",
+      "name": "VIVAIO豊富 土日祝 朝6:00〜個サル",
+      "enabled": true,
+      "shopUrl": "https://yoyaku.labola.jp/r/shop/3050/",
+      "shopName": "VIVAIOフットサルパーク豊富",
+      "kind": "individual",
+      "dayFilter": "weekend_holiday",
+      "customDays": [
+        0,
+        6
+      ],
+      "includeHolidays": true,
+      "startTimeFrom": "06:00",
+      "startTimeTo": "06:30",
+      "keyword": "",
+      "lookaheadDays": 14,
+      "thresholdRemaining": 5,
+      "notifyMode": "on_decrease",
+      "notifyFull": true,
+      "notifyReopen": true
+    }
+  ],
+  "notifications": {
+    "email": {
+      "enabled": false,
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "secure": false,
+      "user": "",
+      "pass": "",
+      "from": "",
+      "to": ""
+    },
+    "line": {
+      "enabled": false,
+      "channelAccessToken": "",
+      "userId": ""
+    }
+  }
+}

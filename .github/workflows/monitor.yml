@@ -1,0 +1,35 @@
+name: LaBOLA Kosaru Monitor
+
+on:
+  schedule:
+    # 10分おきにチェック（GitHub Actions の仕様で数分の前後あり）
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Restore monitor state
+        uses: actions/cache@v4
+        with:
+          path: data/state.json
+          key: labola-state-${{ github.run_id }}
+          restore-keys: |
+            labola-state-
+      - name: Run monitor check
+        env:
+          EMAIL_ENABLED: ${{ secrets.EMAIL_ENABLED }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          LINE_ENABLED: ${{ secrets.LINE_ENABLED }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: npm run check
